@@ -54,8 +54,8 @@ function getCookieHeader(cookies: parse.CookieMap) {
 	return result.join('; ');
 }
 
-function decodeResponseData(encodedData: string, appDataToken: string) {
-	const decipher = createDecipheriv('aes-256-ecb', appDataToken, null);
+function decodeResponseData(encodedData: string, token: string) {
+	const decipher = createDecipheriv('aes-256-ecb', token, null);
 	const decrypted = decipher.update(encodedData, 'base64', 'utf-8') + decipher.final('utf-8');
 	return decrypted;
 }
