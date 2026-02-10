@@ -51,6 +51,8 @@ async function test() {
 	console.log(scrambleId);
 
 	console.log(await simpleGetPhoto('1235125'));
+	// invalid?
+	console.log(await simpleGetPhoto('9090999909'));
 }
 
 test().catch((e) => console.error(e));
