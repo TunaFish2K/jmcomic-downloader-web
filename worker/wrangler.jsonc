@@ -4,15 +4,13 @@
  */
 {
 	"$schema": "node_modules/wrangler/config-schema.json",
-	"name": "worker",
+	"name": "jmcomic-web-worker",
 	"main": "src/index.ts",
 	"compatibility_date": "2025-09-27",
 	"observability": {
-		"enabled": true
+		"enabled": true,
 	},
-	"compatibility_flags": [
-		"nodejs_compat"
-	]
+	"compatibility_flags": ["nodejs_compat"],
 	/**
 	 * Smart Placement
 	 * https://developers.cloudflare.com/workers/configuration/smart-placement/#smart-placement
