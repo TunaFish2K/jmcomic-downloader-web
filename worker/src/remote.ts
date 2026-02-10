@@ -150,3 +150,43 @@ export async function getScrambleId(
 	if (matchResult === null) throw new Error('scrambleId not found');
 	return parseInt(matchResult[1]);
 }
+
+export async function simpleGetPhoto(id: string) {
+	const timestampSeconds = getTimestampSeconds();
+
+	const baseURL = 'https://' + (await getDomains(DOMAIN_SERVER_URL[0], SECRET_DOMAIN_SERVER))![0];
+
+	const clientData = await getClientData(
+		baseURL,
+		getToken(timestampSeconds, SECRET),
+		getTokenParam(timestampSeconds, '2.0.16'),
+		getToken(timestampSeconds, SECRET_APP_DATA),
+	);
+	const cookie = getCookieHeader(clientData.cookies);
+
+	const photoData = await getPhotoData(
+		baseURL,
+		id,
+		{
+			token: getToken(timestampSeconds, SECRET),
+			tokenParam: getTokenParam(timestampSeconds, clientData.version),
+			cookie,
+		},
+		getToken(timestampSeconds, SECRET_APP_DATA),
+	);
+
+	const scrambleId = await getScrambleId(baseURL, id, {
+		appContentToken: getToken(timestampSeconds, SECRET_CONTENT),
+		tokenParam: getTokenParam(timestampSeconds, clientData.version),
+		cookie,
+		timestampSeconds,
+	});
+	return {
+		...photoData,
+		images: photoData.images.map((name) => ({
+			name,
+			url: new URL(`/media/photos/${photoData.id}/${name}`, clientData.imageBaseURL).toString(),
+		})),
+		scrambleId,
+	};
+}
