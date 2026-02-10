@@ -23,7 +23,7 @@ function getTokenParam(timestampSeconds: number, version: string) {
 	return `${timestampSeconds.toString()},${version}`;
 }
 
-async function getVersionAndCookies(baseURL: string, token: string, tokenParam: string) {
+async function getClientData(baseURL: string, token: string, tokenParam: string) {
 	const url = new URL('/setting', baseURL);
 	const res = await fetch(url, {
 		headers: {
@@ -35,12 +35,16 @@ async function getVersionAndCookies(baseURL: string, token: string, tokenParam: 
 	const cookies = parseSetCookie(setCookie, {
 		map: true,
 	});
-	const { version } = (await res.json()) as {
+	const encoded = ((await res.json()) as { data: string }).data;
+	const decoded = decodeResponseData(encoded, token);
+	const { version, img_host: imageBaseURL } = JSON.parse(decoded) as {
 		version: string;
+		img_host: string;
 	};
 	return {
 		version,
 		cookies,
+		imageBaseURL,
 	};
 }
 
