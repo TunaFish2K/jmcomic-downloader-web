@@ -1,4 +1,4 @@
-import { createHash } from 'node:crypto';
+import { createDecipheriv, createHash } from 'node:crypto';
 import parse, { parse as parseSetCookie } from 'set-cookie-parser';
 
 const SECRET = '18comicAPP';
@@ -40,6 +40,12 @@ function getCookieHeader(cookies: parse.CookieMap) {
 	}
 
 	return result.join('; ');
+}
+
+function decodeResponseData(encodedData: string, token: string) {
+	const decipher = createDecipheriv('aes-256-ecb', token, null);
+	const decrypted = decipher.update(encodedData, 'base64', 'utf-8') + decipher.final('utf-8');
+	return decrypted;
 }
 
 export default {
