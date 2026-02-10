@@ -65,6 +65,7 @@ async function getDomain(domainServerURL: string, appDataToken: string) {
 	const encoded = await res.text();
 	const decoded = decodeResponseData(encoded, appDataToken);
 	const data = JSON.parse(decoded);
+	if (typeof data.Server !== 'string') throw new Error(`domain not found, response data: ${decoded}`);
 	return data.Server as string;
 }
 
