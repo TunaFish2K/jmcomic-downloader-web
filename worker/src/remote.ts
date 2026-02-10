@@ -64,10 +64,10 @@ export function decodeResponseData(encodedData: string, token: string) {
 	return decrypted;
 }
 
-export async function getDomain(domainServerURL: string, appDataToken: string) {
+export async function getDomain(domainServerURL: string, domainServerToken: string) {
 	const res = await fetch(domainServerURL);
 	const encoded = await res.text();
-	const decoded = decodeResponseData(encoded, appDataToken);
+	const decoded = decodeResponseData(encoded, domainServerToken);
 	const data = JSON.parse(decoded);
 	if (typeof data.Server !== 'string') throw new Error(`domain not found, response data: ${decoded}`);
 	return data.Server as string;
