@@ -3,6 +3,7 @@ import parse, { parse as parseSetCookie } from 'set-cookie-parser';
 
 const SECRET = '18comicAPP';
 const SECRET_CONTENT = '18comicAPPContent';
+const SECRET_APP_DATA = '185Hcomic3PAPP7R';
 
 function getTimestampSeconds() {
 	return Math.floor(Date.now() / 1000);
