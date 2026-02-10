@@ -110,6 +110,7 @@ export async function getPhotoData(
 		id: string;
 		images: string[];
 	};
+	if (decoded.name === null && decoded.images.length <= 0) return null;
 	return decoded;
 }
 
@@ -174,6 +175,8 @@ export async function simpleGetPhoto(id: string) {
 		},
 		getToken(timestampSeconds, SECRET_APP_DATA),
 	);
+
+	if (photoData === null) return null;
 
 	const scrambleId = await getScrambleId(baseURL, id, {
 		appContentToken: getToken(timestampSeconds, SECRET_CONTENT),
