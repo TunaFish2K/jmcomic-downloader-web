@@ -54,16 +54,16 @@ function getCookieHeader(cookies: parse.CookieMap) {
 	return result.join('; ');
 }
 
-function decodeResponseData(encodedData: string, token: string) {
-	const decipher = createDecipheriv('aes-256-ecb', token, null);
+function decodeResponseData(encodedData: string, appDataToken: string) {
+	const decipher = createDecipheriv('aes-256-ecb', appDataToken, null);
 	const decrypted = decipher.update(encodedData, 'base64', 'utf-8') + decipher.final('utf-8');
 	return decrypted;
 }
 
-async function getDomain(domainServerURL: string, token: string) {
+async function getDomain(domainServerURL: string, appDataToken: string) {
 	const res = await fetch(domainServerURL);
 	const encoded = await res.text();
-	const decoded = decodeResponseData(encoded, token);
+	const decoded = decodeResponseData(encoded, appDataToken);
 	const data = JSON.parse(decoded);
 	if (typeof data.Server !== 'string') {
 		throw new Error(`failed to get a domain, got data: ${decoded}`);
