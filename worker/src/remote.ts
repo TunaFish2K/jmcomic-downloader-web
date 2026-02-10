@@ -66,7 +66,7 @@ export function getCookieHeader(cookies: parse.CookieMap) {
 }
 
 export function decodeResponseData(encodedData: string, secret: string) {
-	const decipher = createDecipheriv('aes-256-ecb', secret, null);
+	const decipher = createDecipheriv('aes-256-ecb', secret, Buffer.alloc(0));
 	decipher.setAutoPadding(false);
 	let decrypted = decipher.update(encodedData, 'base64', 'utf-8') + decipher.final('utf-8');
 	const padLen = decrypted.charCodeAt(decrypted.length - 1);
