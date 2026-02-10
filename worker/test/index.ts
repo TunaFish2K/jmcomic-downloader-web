@@ -12,6 +12,7 @@ import {
 	SECRET_APP_DATA,
 	SECRET_CONTENT,
 	SECRET_DOMAIN_SERVER,
+	simpleGetPhoto,
 } from '../src/remote';
 
 async function test() {
@@ -48,6 +49,8 @@ async function test() {
 		timestampSeconds,
 	});
 	console.log(scrambleId);
+
+	console.log(await simpleGetPhoto('1235125'));
 }
 
 test().catch((e) => console.error(e));
