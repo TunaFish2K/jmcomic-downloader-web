@@ -16,6 +16,16 @@ export default {
 				},
 			);
 		const photo = await simpleGetPhoto(photoId);
+		if (photo === null)
+			return Response.json(
+				{
+					message: 'photo not found',
+				},
+				{
+					status: 404,
+					statusText: 'Not Found',
+				},
+			);
 		return Response.json(photo);
 	},
 } satisfies ExportedHandler<Env>;
