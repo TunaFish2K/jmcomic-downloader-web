@@ -4,6 +4,12 @@ import parse, { parse as parseSetCookie } from 'set-cookie-parser';
 const SECRET = '18comicAPP';
 const SECRET_CONTENT = '18comicAPPContent';
 const SECRET_APP_DATA = '185Hcomic3PAPP7R';
+const SECRET_DOMAIN_SERVER = 'diosfjckwpqpdfjkvnqQjsik';
+
+const DOMAIN_SERVER_URL = [
+	'https://rup4a04-c01.tos-ap-southeast-1.bytepluses.com/newsvr-2025.txt',
+	'https://rup4a04-c02.tos-cn-hongkong.bytepluses.com/newsvr-2025.txt',
+];
 
 function getTimestampSeconds() {
 	return Math.floor(Date.now() / 1000);
@@ -52,6 +58,17 @@ function decodeResponseData(encodedData: string, token: string) {
 	const decipher = createDecipheriv('aes-256-ecb', token, null);
 	const decrypted = decipher.update(encodedData, 'base64', 'utf-8') + decipher.final('utf-8');
 	return decrypted;
+}
+
+async function getDomain(domainServerURL: string, token: string) {
+	const res = await fetch(domainServerURL);
+	const encoded = await res.text();
+	const decoded = decodeResponseData(encoded, token);
+	const data = JSON.parse(decoded);
+	if (typeof data.Server !== 'string') {
+		throw new Error(`failed to get a domain, got data: ${decoded}`);
+	}
+	return data.Server as string;
 }
 
 export default {
