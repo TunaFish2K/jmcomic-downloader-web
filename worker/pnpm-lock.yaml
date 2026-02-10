@@ -8,6 +8,9 @@ importers:
 
   .:
     dependencies:
+      '@types/set-cookie-parser':
+        specifier: ^2.4.10
+        version: 2.4.10
       set-cookie-parser:
         specifier: ^3.0.1
         version: 3.0.1
@@ -539,6 +542,9 @@ packages:
 
   '@types/node@25.2.3':
     resolution: {integrity: sha512-m0jEgYlYz+mDJZ2+F4v8D1AyQb+QzsNqRuI7xg1VQX/KlKS0qT9r1Mo16yo5F/MtifXFgaofIFsdFMox2SxIbQ==}
+
+  '@types/set-cookie-parser@2.4.10':
+    resolution: {integrity: sha512-GGmQVGpQWUe5qglJozEjZV/5dyxbOOZ0LHe/lqyWssB88Y4svNfst0uqBVscdDeIKl5Jy5+aPSvy7mI9tYRguw==}
 
   '@vitest/expect@3.2.4':
     resolution: {integrity: sha512-Io0yyORnB6sikFlt8QW5K7slY4OjqNX9jmJQ02QDda8lyM6B5oNgVWoSoKPac8/kgnCUzuHQKrSLtu/uOqqrig==}
@@ -1213,6 +1219,10 @@ snapshots:
   '@types/node@25.2.3':
     dependencies:
       undici-types: 7.16.0
+
+  '@types/set-cookie-parser@2.4.10':
+    dependencies:
+      '@types/node': 25.2.3
 
   '@vitest/expect@3.2.4':
     dependencies:

@@ -15,6 +15,7 @@
 		"wrangler": "^4.64.0"
 	},
 	"dependencies": {
+		"@types/set-cookie-parser": "^2.4.10",
 		"set-cookie-parser": "^3.0.1"
 	}
 }
