@@ -11,6 +11,12 @@ export const DOMAIN_SERVER_URL = [
 	'https://rup4a04-c02.tos-cn-hongkong.bytepluses.com/newsvr-2025.txt',
 ];
 
+export const HEADERS_API = {
+	'Accept-Encoding': 'gzip, deflate',
+	'user-agent':
+		'Mozilla/5.0 (Linux; Android 9; V1938CT Build/PQ3A.190705.11211812; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/91.0.4472.114 Safari/537.36',
+};
+
 export function getTimestampSeconds() {
 	return Math.floor(Date.now() / 1000);
 }
@@ -23,12 +29,13 @@ export function getTokenParam(timestampSeconds: number, version: string) {
 	return `${timestampSeconds.toString()},${version}`;
 }
 
-export async function getClientData(baseURL: string, token: string, tokenParam: string) {
+export async function getClientData(baseURL: string, token: string, tokenParam: string, appDataToken: string) {
 	const url = new URL('/setting', baseURL);
 	const res = await fetch(url, {
 		headers: {
 			token,
 			tokenparam: tokenParam,
+			...HEADERS_API,
 		},
 	});
 	const setCookie = res.headers.getSetCookie();
@@ -36,7 +43,7 @@ export async function getClientData(baseURL: string, token: string, tokenParam: 
 		map: true,
 	});
 	const encoded = ((await res.json()) as { data: string }).data;
-	const decoded = decodeResponseData(encoded, token);
+	const decoded = decodeResponseData(encoded, appDataToken);
 	const { version, img_host: imageBaseURL } = JSON.parse(decoded) as {
 		version: string;
 		img_host: string;
@@ -58,19 +65,27 @@ export function getCookieHeader(cookies: parse.CookieMap) {
 	return result.join('; ');
 }
 
-export function decodeResponseData(encodedData: string, token: string) {
-	const decipher = createDecipheriv('aes-256-ecb', token, null);
-	const decrypted = decipher.update(encodedData, 'base64', 'utf-8') + decipher.final('utf-8');
+export function decodeResponseData(encodedData: string, secret: string) {
+	const decipher = createDecipheriv('aes-256-ecb', secret, null);
+	decipher.setAutoPadding(false);
+	let decrypted = decipher.update(encodedData, 'base64', 'utf-8') + decipher.final('utf-8');
+	const padLen = decrypted.charCodeAt(decrypted.length - 1);
+	if (padLen && padLen <= 16) decrypted = decrypted.slice(0, -padLen);
 	return decrypted;
 }
 
-export async function getDomain(domainServerURL: string, domainServerToken: string) {
-	const res = await fetch(domainServerURL);
-	const encoded = await res.text();
-	const decoded = decodeResponseData(encoded, domainServerToken);
+export async function getDomains(domainServerURL: string, domainServerSecret: string) {
+	const res = await fetch(domainServerURL, {
+		headers: {
+			...HEADERS_API,
+		},
+	});
+	let encoded = await res.text();
+	while (encoded && !encoded[0].match(/[0-9A-Za-z]/)) encoded = encoded.slice(1);
+	const decoded = decodeResponseData(encoded, createHash('md5').update(domainServerSecret).digest().toString('hex'));
+	console.log(decoded);
 	const data = JSON.parse(decoded);
-	if (typeof data.Server !== 'string') throw new Error(`domain not found, response data: ${decoded}`);
-	return data.Server as string;
+	return Array.isArray(data.Server) ? (data.Server as string[]) : null;
 }
 
 export async function getPhotoData(
@@ -86,6 +101,7 @@ export async function getPhotoData(
 			cookie,
 			token,
 			tokenparam: tokenParam,
+			...HEADERS_API,
 		},
 	});
 	const encoded = ((await res.json()) as { data: string }).data;
@@ -126,6 +142,7 @@ export async function getScrambleId(
 			cookie,
 			token: appContentToken,
 			tokenparam: tokenParam,
+			...HEADERS_API,
 		},
 	});
 	const text = await res.text();
