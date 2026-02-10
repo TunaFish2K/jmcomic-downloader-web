@@ -18,7 +18,12 @@ function getTokenParam(timestampSeconds: number, version: string) {
 
 async function getVersionAndCookies(baseURL: string, token: string, tokenParam: string) {
 	const url = new URL('/setting', baseURL);
-	const res = await fetch(url);
+	const res = await fetch(url, {
+		headers: {
+			token,
+			tokenparam: tokenParam,
+		},
+	});
 	const setCookie = res.headers.getSetCookie();
 	const cookies = parseSetCookie(setCookie, {
 		map: true,
