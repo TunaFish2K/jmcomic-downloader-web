@@ -1,0 +1,17 @@
+{
+	"name": "worker",
+	"version": "0.0.0",
+	"private": true,
+	"scripts": {
+		"deploy": "wrangler deploy",
+		"dev": "wrangler dev",
+		"start": "wrangler dev",
+		"cf-typegen": "wrangler types"
+	},
+	"devDependencies": {
+		"@cloudflare/vitest-pool-workers": "^0.12.4",
+		"@types/node": "^25.2.3",
+		"typescript": "^5.5.2",
+		"wrangler": "^4.64.0"
+	}
+}
