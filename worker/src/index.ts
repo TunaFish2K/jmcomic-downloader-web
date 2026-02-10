@@ -1,4 +1,5 @@
 import { createHash } from 'node:crypto';
+import parse, { parse as parseSetCookie } from 'set-cookie-parser';
 
 const SECRET = '18comicAPP';
 const SECRET_CONTENT = '18comicAPPContent';
@@ -13,6 +14,32 @@ function getToken(timestampSeconds: number, secret: string) {
 
 function getTokenParam(timestampSeconds: number, version: string) {
 	return `${timestampSeconds.toString()},${version}`;
+}
+
+async function getVersionAndCookies(baseURL: string, token: string, tokenParam: string) {
+	const url = new URL('/setting', baseURL);
+	const res = await fetch(url);
+	const setCookie = res.headers.getSetCookie();
+	const cookies = parseSetCookie(setCookie, {
+		map: true,
+	});
+	const { version } = (await res.json()) as {
+		version: string;
+	};
+	return {
+		version,
+		cookies,
+	};
+}
+
+function getCookieHeader(cookies: parse.CookieMap) {
+	const result: string[] = [];
+
+	for (const [name, { value }] of Object.entries(cookies)) {
+		result.push(`${name}=${value}`);
+	}
+
+	return result.join('; ');
 }
 
 export default {

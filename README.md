@@ -12,10 +12,11 @@
 变为文件下载给用户。
 ## 开发阶段
 - [ ] 实现与禁漫服务器的通信
-    - [ ] 实现请求时参数的生成
+    - [x] 实现请求时参数的生成
         - [x] token相关
-        - [ ] 默认cookies
-            - [ ] 使用`set-cookie-parser`解析传来的Set-Cookie
+        - [x] 默认cookie
+            - [x] 使用`set-cookie-parser`解析传来的Set-Cookie
+            - [x] 生成默认cookie的头数据
     - [ ] 实现通用的返回数据解密
     - [ ] 实现可用域名的动态获取
     - [ ] 实现获取章节的数据（标题，图片列表，scrambleId）
