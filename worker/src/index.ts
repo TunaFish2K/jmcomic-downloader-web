@@ -93,6 +93,43 @@ async function getPhotoData(
 	return decoded;
 }
 
+const REGEXP_SCRAMBLE_ID = /var scramble_id = (\d+);/;
+
+async function getScrambleId(
+	baseURL: string,
+	id: string,
+	{
+		appContentToken,
+		tokenParam,
+		cookie,
+		timestampSeconds,
+	}: {
+		appContentToken: string;
+		tokenParam: string;
+		cookie: string;
+		timestampSeconds: number;
+	},
+) {
+	const url = new URL('/chapter_view_template', baseURL);
+	url.searchParams.set('id', id);
+	url.searchParams.set('mode', 'vertical');
+	url.searchParams.set('page', String(0));
+	url.searchParams.set('app_img_shunt', String(1));
+	url.searchParams.set('express', 'off');
+	url.searchParams.set('v', timestampSeconds.toString());
+	const res = await fetch(url, {
+		headers: {
+			cookie,
+			token: appContentToken,
+			tokenparam: tokenParam,
+		},
+	});
+	const text = await res.text();
+	const matchResult = text.match(REGEXP_SCRAMBLE_ID);
+	if (matchResult === null) throw new Error('scrambleId not found');
+	return parseInt(matchResult[1]);
+}
+
 export default {
 	async fetch(request, env, ctx): Promise<Response> {
 		return new Response('Hello World!');
