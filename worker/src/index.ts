@@ -68,6 +68,30 @@ async function getDomain(domainServerURL: string, appDataToken: string) {
 	return data.Server as string;
 }
 
+async function getPhotoData(
+	baseURL: string,
+	id: string,
+	{ token, tokenParam, cookie }: { token: string; tokenParam: string; cookie: string },
+	appDataToken: string,
+) {
+	const url = new URL('/chapter', baseURL);
+	url.searchParams.set('id', id);
+	const res = await fetch(url, {
+		headers: {
+			cookie,
+			token,
+			tokenparam: tokenParam,
+		},
+	});
+	const encoded = ((await res.json()) as { data: string }).data;
+	const decoded = JSON.parse(decodeResponseData(encoded, appDataToken)) as {
+		name: string;
+		id: string;
+		images: string[];
+	};
+	return decoded;
+}
+
 export default {
 	async fetch(request, env, ctx): Promise<Response> {
 		return new Response('Hello World!');
