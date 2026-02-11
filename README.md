@@ -17,7 +17,7 @@ pnpm run dev # 自动启动后端与前端
 在部署后端后，需要你在Github Fork这一仓库。  
 在Cloudflare面板创建Page，使用这一仓库。  
 将根目录设置为`/page`，框架预设选择React，构建命令填写`pnpm run build`。  
-设置环境变量`VITE_BACKEND_URL`为的Worker的地址。然后部署。
+设置环境变量`VITE_BACKEND_URL`为Worker的地址。然后部署。
 
 ## 技术架构
 分为部署为Cloudflare Pages的React前端和部署为Cloudflare Worker的后端。
