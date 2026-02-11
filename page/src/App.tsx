@@ -31,7 +31,12 @@ async function getPhoto(id: string) {
 	return body;
 }
 
-async function downloadPhoto(photo: Awaited<ReturnType<typeof getPhoto>>) {
+async function downloadPhoto(
+	photo: Awaited<ReturnType<typeof getPhoto>>,
+	onProgress?: (done: number, left: number, total: number) => void,
+) {
+	const total = photo.images.length;
+	let done = 0;
 	const images = await Promise.all(
 		photo.images.map(async (imgData) => ({
 			...imgData,
@@ -40,6 +45,8 @@ async function downloadPhoto(photo: Awaited<ReturnType<typeof getPhoto>>) {
 				img.crossOrigin = 'anonymous';
 				img.src = imgData.url;
 				await img.decode();
+				done += 1;
+				if (onProgress) onProgress(done, total - done, total);
 				return img;
 			})(),
 		})),
@@ -141,6 +148,7 @@ function App() {
 	const [queryingPhotoData, setQueryingPhotoData] = useState(false);
 	const [photoData, setPhotoData] = useState<Awaited<ReturnType<typeof getPhoto>> | null>(null);
 	const [downloadingPhoto, setDownloadingPhoto] = useState(false);
+	const [downloadingProgress, setDownloadingProgress] = useState(0);
 
 	const canOperate = !downloadingPhoto && !queryingPhotoData;
 
@@ -157,8 +165,11 @@ function App() {
 
 	async function downloadPhotoHandler() {
 		setDownloadingPhoto(true);
+		setDownloadingProgress(0);
 		try {
-			const downloaded = await downloadPhoto(photoData!);
+			const downloaded = await downloadPhoto(photoData!, (done) => {
+				setDownloadingProgress(done);
+			});
 			const pdf = await getPDFFromPhoto(downloaded);
 			const data = await pdf.save();
 			downloadUint8Array(data, `${photoData!.name}.pdf`, 'application/pdf');
@@ -195,6 +206,15 @@ function App() {
 					<button type="submit" onClick={() => downloadPhotoHandler()} disabled={!canOperate}>
 						下载
 					</button>
+					{downloadingPhoto && (
+						<div className="card">
+							<span>
+								{' '}
+								下载进度：{downloadingProgress} / {photoData.images.length}
+							</span>
+							<span>{downloadingProgress >= photoData.images.length && '生成PDF中...'}</span>
+						</div>
+					)}
 				</form>
 			)}
 		</>
