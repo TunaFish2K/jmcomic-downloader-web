@@ -1,5 +1,5 @@
 # 禁漫下载器网页版
-在网页输入车牌号，用户可以下载到对应本子的PDF文件，支持可选的PDF密码。
+在网页输入车牌号，用户可以下载到对应本子的PDF文件。
 ## 部署与开发
 ```sh
 git clone https://github.com/TunaFish2K/jmcomic-downloader-web --depth=1
