@@ -4,6 +4,7 @@ import viteLogo from '/vite.svg';
 import './App.css';
 import { md5 } from '@noble/hashes/legacy.js';
 import { bytesToHex } from '@noble/hashes/utils.js';
+import { PDFDocument } from 'pdf-lib';
 
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
 
@@ -84,6 +85,44 @@ function reverseImageSlices(bitmap: ImageBitmap, sliceCount: number) {
 	}
 
 	return canvas;
+}
+
+async function generatePDF(images: ImageBitmap[]) {
+	const pdfDocument = await PDFDocument.create();
+	for (const image of images) {
+		const page = pdfDocument.addPage([image.width, image.height]);
+		const pdfImage = await pdfDocument.embedJpg(await bitmapToJpgBuffer(image));
+		page.drawImage(pdfImage, { x: 0, y: 0, width: image.width, height: image.height });
+	}
+	return pdfDocument;
+}
+
+async function bitmapToJpgBuffer(bitmap: ImageBitmap, quality = 0.9): Promise<Uint8Array> {
+	const canvas = new OffscreenCanvas(bitmap.width, bitmap.height);
+	const ctx = canvas.getContext('2d');
+
+	if (!ctx) throw new Error('无法创建 Canvas 上下文');
+
+	ctx.drawImage(bitmap, 0, 0);
+
+	const blob = await canvas.convertToBlob({
+		type: 'image/jpeg',
+		quality: quality,
+	});
+
+	const buffer = await blob.arrayBuffer();
+	return new Uint8Array(buffer);
+}
+
+async function getPDFFromPhoto(photo: Awaited<ReturnType<typeof downloadPhoto>>) {
+	const decodedImages: ImageBitmap[] = [];
+	for (const image of photo.images) {
+		const sliceCount = getSliceCount(photo.scrambleId, photo.id, image.name);
+		const decoded = reverseImageSlices(await createImageBitmap(image.data), sliceCount);
+		decodedImages.push(decoded as ImageBitmap);
+	}
+	const pdf = await generatePDF(decodedImages);
+	return pdf;
 }
 
 function App() {
