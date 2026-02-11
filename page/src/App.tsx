@@ -32,6 +32,25 @@ async function getPhoto(id: number) {
 	return body;
 }
 
+async function downloadPhoto(photo: Awaited<ReturnType<typeof getPhoto>>) {
+	const images = await Promise.all(
+		photo.images.map(async (imgData) => ({
+			...imgData,
+			data: await (async () => {
+				const img = new Image();
+				img.crossOrigin = 'anonymous';
+				img.src = imgData.url;
+				await img.decode();
+				return img;
+			})(),
+		})),
+	);
+	return {
+		...photo,
+		images,
+	};
+}
+
 const SCRAMBLE_268850 = 268850;
 const SCRAMBLE_421926 = 421926;
 
