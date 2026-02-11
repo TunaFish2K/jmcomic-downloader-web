@@ -175,7 +175,7 @@ function App() {
 				查询本子
 				<label>
 					车牌号：
-					<input type="" onChange={(ev) => setPhotoId(ev.target.value)} disabled={queryingPhotoData} />{' '}
+					<input type="" onChange={(ev) => setPhotoId(ev.target.value)} disabled={!canOperate} />{' '}
 				</label>
 				<button
 					type="submit"
