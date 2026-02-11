@@ -155,7 +155,7 @@ function App() {
 	async function queryPhotoDataHandler() {
 		setQueryingPhotoData(true);
 		try {
-			setPhotoData(await getPhoto(photoId));
+			setPhotoData(await getPhoto(photoId.trim()));
 		} catch (e) {
 			alert('获取失败：' + ((e as Error).message ?? e));
 		} finally {
