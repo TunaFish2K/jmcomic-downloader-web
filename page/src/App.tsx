@@ -42,7 +42,7 @@ function getSliceCount(scrambleId: number, photoId: number, filename: string): n
 	return (hex.charCodeAt(hex.length - 1) % (photoId < SCRAMBLE_421926 ? 10 : 8)) * 2 + 2;
 }
 
-async function reverseImageSlices(bitmap: ImageBitmap, sliceCount: number): Promise<ImageBitmap> {
+async function reverseImageSlices(bitmap: ImageBitmap, sliceCount: number) {
 	if (sliceCount < 1) return bitmap;
 
 	const { width, height } = bitmap;
@@ -64,7 +64,7 @@ async function reverseImageSlices(bitmap: ImageBitmap, sliceCount: number): Prom
 		ctx.drawImage(bitmap, 0, sY, width, sliceHeightActual, 0, dY, width, sliceHeightActual);
 	}
 
-	return canvas.transferToImageBitmap();
+	return canvas;
 }
 
 function App() {
