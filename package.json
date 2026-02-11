@@ -11,7 +11,7 @@
     "worker:start": "cd worker && pnpm run start",
     "worker:cf-typegen": "cd worker && pnpm run cf-typegen",
     "worker:test": "cd worker && pnpm run test",
-    "dev": "concurrently \"pnpm run worker:dev\" \"wait-on http://localhost:8787 && pnpm run page:dev\""
+    "dev": "concurrently \"pnpm run worker:dev\" \"wait-on tcp:localhost:8787 && pnpm run page:dev\""
   },
   "packageManager": "pnpm@10.28.0",
   "devDependencies": {
