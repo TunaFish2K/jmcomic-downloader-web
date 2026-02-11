@@ -56,3 +56,9 @@ pnpm run dev # 启动后端后启动前端以开发
 - [x] 修缮
     - [x] 后端限流（借助cloudflare waf，不用自行实现）
     - [x] 前端下载图片的进度显示
+
+## 致谢
+本项目全程在学习和抄写[https://github.com/hect0x7/JMComic-Crawler-Python](https://github.com/hect0x7/JMComic-Crawler-Python/)项目。（欸嘿）
+
+## 许可证
+本项目以MIT许可证开源。
