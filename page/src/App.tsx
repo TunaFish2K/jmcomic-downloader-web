@@ -8,7 +8,7 @@ import { PDFDocument } from 'pdf-lib';
 
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
 
-async function getPhoto(id: number) {
+async function getPhoto(id: string) {
 	const url = new URL(`/${id}`, BACKEND_URL);
 	const res = await fetch(url);
 	if (!res.ok) {
