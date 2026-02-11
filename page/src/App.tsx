@@ -217,7 +217,12 @@ function App() {
 				</form>
 			)}
 
-			<span className="card">本服务不做图片资源中转。图片一般不会被墙，如果出现错误建议等会重试，基本都是上游图片CDN的暂时问题。</span>
+			<div className="card">
+				<span>本服务不做图片资源中转。图片一般不会被墙，如果出现错误建议等会重试，基本都是上游图片CDN的暂时问题。</span>
+				<span>
+					Github: <a href="https://github.com/TunaFish2K/jmcomic-downloader-web">前往</a>
+				</span>
+			</div>
 		</>
 	);
 }
