@@ -42,6 +42,31 @@ function getSliceCount(scrambleId: number, photoId: number, filename: string): n
 	return (hex.charCodeAt(hex.length - 1) % (photoId < SCRAMBLE_421926 ? 10 : 8)) * 2 + 2;
 }
 
+async function reverseImageSlices(bitmap: ImageBitmap, sliceCount: number): Promise<ImageBitmap> {
+	if (sliceCount < 1) return bitmap;
+
+	const { width, height } = bitmap;
+	const canvas = new OffscreenCanvas(width, height);
+	const ctx = canvas.getContext('2d');
+
+	if (!ctx) throw new Error('failed to get canvas context');
+
+	const baseHeight = Math.floor(height / sliceCount);
+	const remainder = height % sliceCount;
+
+	for (let i = 0; i < sliceCount; i++) {
+		let sliceHeightActual = baseHeight;
+		if (i === 0) sliceHeightActual += remainder;
+		const sY = height - i * baseHeight - sliceHeightActual;
+		let dY = i * baseHeight;
+		if (i > 0) dY += remainder;
+
+		ctx.drawImage(bitmap, 0, sY, width, sliceHeightActual, 0, dY, width, sliceHeightActual);
+	}
+
+	return canvas.transferToImageBitmap();
+}
+
 function App() {
 	const [count, setCount] = useState(0);
 
