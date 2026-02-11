@@ -83,7 +83,6 @@ export async function getDomains(domainServerURL: string, domainServerSecret: st
 	let encoded = await res.text();
 	while (encoded && !encoded[0].match(/[0-9A-Za-z]/)) encoded = encoded.slice(1);
 	const decoded = decodeResponseData(encoded, createHash('md5').update(domainServerSecret).digest().toString('hex'));
-	console.log(decoded);
 	const data = JSON.parse(decoded);
 	return Array.isArray(data.Server) ? (data.Server as string[]) : null;
 }
