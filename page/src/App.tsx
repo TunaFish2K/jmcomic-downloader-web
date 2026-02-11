@@ -171,7 +171,7 @@ function App() {
 
 	return (
 		<>
-			<form>
+			<form className="card">
 				查询本子
 				<label>
 					车牌号：
@@ -189,7 +189,7 @@ function App() {
 				</button>
 			</form>
 			{photoData !== null && (
-				<form>
+				<form className="card">
 					<span>车牌号： {photoData!.id}</span>
 					<span>标题: {photoData!.name}</span>
 					<button type="submit" onClick={() => downloadPhotoHandler()} disabled={!canOperate}>
