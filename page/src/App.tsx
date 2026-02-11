@@ -1,10 +1,8 @@
-import { useState } from 'react';
-import reactLogo from './assets/react.svg';
-import viteLogo from '/vite.svg';
 import './App.css';
 import { md5 } from '@noble/hashes/legacy.js';
 import { bytesToHex } from '@noble/hashes/utils.js';
 import { PDFDocument } from 'pdf-lib';
+import { useState } from 'react';
 
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
 
@@ -68,22 +66,23 @@ function reverseImageSlices(bitmap: ImageBitmap, sliceCount: number) {
 	const { width, height } = bitmap;
 	const canvas = new OffscreenCanvas(width, height);
 	const ctx = canvas.getContext('2d');
-
 	if (!ctx) throw new Error('failed to get canvas context');
 
-	const baseHeight = Math.floor(height / sliceCount);
-	const remainder = height % sliceCount;
-
+	const over = height % sliceCount;
 	for (let i = 0; i < sliceCount; i++) {
-		let sliceHeightActual = baseHeight;
-		if (i === 0) sliceHeightActual += remainder;
-		const sY = height - i * baseHeight - sliceHeightActual;
-		let dY = i * baseHeight;
-		if (i > 0) dY += remainder;
+		const move = Math.floor(height / sliceCount);
+		const sY = height - move * (i + 1) - over;
+		let dY = move * i;
+		let sliceHeight = move;
 
-		ctx.drawImage(bitmap, 0, sY, width, sliceHeightActual, 0, dY, width, sliceHeightActual);
+		if (i === 0) {
+			sliceHeight += over;
+		} else {
+			dY += over;
+		}
+
+		ctx.drawImage(bitmap, 0, sY, width, sliceHeight, 0, dY, width, sliceHeight);
 	}
-
 	return canvas;
 }
 
@@ -97,7 +96,7 @@ async function generatePDF(images: ImageBitmap[]) {
 	return pdfDocument;
 }
 
-async function bitmapToJpgBuffer(bitmap: ImageBitmap, quality = 0.9): Promise<Uint8Array> {
+async function bitmapToJpgBuffer(bitmap: ImageBitmap, quality = 1): Promise<Uint8Array> {
 	const canvas = new OffscreenCanvas(bitmap.width, bitmap.height);
 	const ctx = canvas.getContext('2d');
 
@@ -125,27 +124,79 @@ async function getPDFFromPhoto(photo: Awaited<ReturnType<typeof downloadPhoto>>)
 	return pdf;
 }
 
+function downloadUint8Array(data: Uint8Array, fileName: string, mimeType: string) {
+	const blob = new Blob([data as Uint8Array<ArrayBuffer>], { type: mimeType });
+	const url = URL.createObjectURL(blob);
+	const link = document.createElement('a');
+	link.href = url;
+	link.download = fileName;
+	document.body.appendChild(link);
+	link.click();
+	document.body.removeChild(link);
+	URL.revokeObjectURL(url);
+}
+
 function App() {
-	const [count, setCount] = useState(0);
+	const [photoId, setPhotoId] = useState('');
+	const [queryingPhotoData, setQueryingPhotoData] = useState(false);
+	const [photoData, setPhotoData] = useState<Awaited<ReturnType<typeof getPhoto>> | null>(null);
+	const [downloadingPhoto, setDownloadingPhoto] = useState(false);
+
+	const canOperate = !downloadingPhoto && !queryingPhotoData;
+
+	async function queryPhotoDataHandler() {
+		setQueryingPhotoData(true);
+		try {
+			setPhotoData(await getPhoto(photoId));
+		} catch (e) {
+			alert('获取失败：' + ((e as Error).message ?? e));
+		} finally {
+			setQueryingPhotoData(false);
+		}
+	}
+
+	async function downloadPhotoHandler() {
+		setDownloadingPhoto(true);
+		try {
+			const downloaded = await downloadPhoto(photoData!);
+			const pdf = await getPDFFromPhoto(downloaded);
+			const data = await pdf.save();
+			downloadUint8Array(data, `${photoData!.name}.pdf`, 'application/pdf');
+		} catch (e) {
+			alert('下载失败：' + ((e as Error).message ?? e));
+		} finally {
+			setDownloadingPhoto(false);
+		}
+	}
 
 	return (
 		<>
-			<div>
-				<a href="https://vite.dev" target="_blank">
-					<img src={viteLogo} className="logo" alt="Vite logo" />
-				</a>
-				<a href="https://react.dev" target="_blank">
-					<img src={reactLogo} className="logo react" alt="React logo" />
-				</a>
-			</div>
-			<h1>Vite + React</h1>
-			<div className="card">
-				<button onClick={() => setCount((count) => count + 1)}>count is {count}</button>
-				<p>
-					Edit <code>src/App.tsx</code> and save to test HMR
-				</p>
-			</div>
-			<p className="read-the-docs">Click on the Vite and React logos to learn more</p>
+			<form>
+				查询本子
+				<label>
+					车牌号：
+					<input type="" onChange={(ev) => setPhotoId(ev.target.value)} disabled={queryingPhotoData} />{' '}
+				</label>
+				<button
+					type="submit"
+					onClick={(ev) => {
+						ev.preventDefault();
+						queryPhotoDataHandler();
+					}}
+					disabled={!canOperate}
+				>
+					查询
+				</button>
+			</form>
+			{photoData !== null && (
+				<form>
+					<span>车牌号： {photoData!.id}</span>
+					<span>标题: {photoData!.name}</span>
+					<button type="submit" onClick={() => downloadPhotoHandler()} disabled={!canOperate}>
+						下载
+					</button>
+				</form>
+			)}
 		</>
 	);
 }
