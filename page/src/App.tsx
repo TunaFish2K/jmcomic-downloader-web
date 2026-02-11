@@ -42,7 +42,7 @@ function getSliceCount(scrambleId: number, photoId: number, filename: string): n
 	return (hex.charCodeAt(hex.length - 1) % (photoId < SCRAMBLE_421926 ? 10 : 8)) * 2 + 2;
 }
 
-async function reverseImageSlices(bitmap: ImageBitmap, sliceCount: number) {
+function reverseImageSlices(bitmap: ImageBitmap, sliceCount: number) {
 	if (sliceCount < 1) return bitmap;
 
 	const { width, height } = bitmap;
