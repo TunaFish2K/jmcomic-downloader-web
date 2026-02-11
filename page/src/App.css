@@ -21,6 +21,7 @@
 	overflow-wrap: anywhere;
 	word-break: break-all;
 	white-space: normal;
+	text-align: start;
 }
 
 .progress {
