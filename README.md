@@ -12,7 +12,7 @@ pnpm run worker:deploy # 部署
 ```
 ### 前端
 ```sh
-pnpm run dev # 启动后端后启动前端以开发
+pnpm run dev # 自动启动后端与前端
 ```
 在部署后端后，需要你在Github Fork这一仓库。  
 在Cloudflare面板创建Page，使用这一仓库。  
