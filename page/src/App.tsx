@@ -207,9 +207,8 @@ function App() {
 						下载
 					</button>
 					{downloadingPhoto && (
-						<div className="card">
+						<div className="card progress">
 							<span>
-								{' '}
 								下载进度：{downloadingProgress} / {photoData.images.length}
 							</span>
 							<span>{downloadingProgress >= photoData.images.length && '生成PDF中...'}</span>
@@ -217,6 +216,8 @@ function App() {
 					)}
 				</form>
 			)}
+
+			<span className="card">本服务不做图片资源中转。图片一般不会被墙，如果出现错误建议等会重试，基本都是上游图片CDN的暂时问题。</span>
 		</>
 	);
 }
