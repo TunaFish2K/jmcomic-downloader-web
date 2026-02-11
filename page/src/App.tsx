@@ -2,6 +2,8 @@ import { useState } from 'react';
 import reactLogo from './assets/react.svg';
 import viteLogo from '/vite.svg';
 import './App.css';
+import { md5 } from '@noble/hashes/legacy.js';
+import { bytesToHex } from '@noble/hashes/utils.js';
 
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
 
@@ -28,6 +30,16 @@ async function getPhoto(id: number) {
 		scrambleId: number;
 	};
 	return body;
+}
+
+const SCRAMBLE_268850 = 268850;
+const SCRAMBLE_421926 = 421926;
+
+function getSliceCount(scrambleId: number, photoId: number, filename: string): number {
+	if (photoId < scrambleId) return 0;
+	if (photoId < SCRAMBLE_268850) return 10;
+	const hex = bytesToHex(md5(new TextEncoder().encode(`${photoId}${filename.split('.')[0]}`)));
+	return (hex.charCodeAt(hex.length - 1) % (photoId < SCRAMBLE_421926 ? 10 : 8)) * 2 + 2;
 }
 
 function App() {
