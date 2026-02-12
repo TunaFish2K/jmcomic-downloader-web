@@ -32,37 +32,35 @@ async function getPhoto(id: string) {
 	return body;
 }
 
-function createEmptyBitmap() {
-	const canvas = new OffscreenCanvas(1, 1);
-	canvas.getContext('2d');
-	return canvas.transferToImageBitmap();
-}
-
 async function downloadPhoto(
 	photo: Awaited<ReturnType<typeof getPhoto>>,
 	onProgress?: (done: number, left: number, total: number) => void,
 ) {
 	const total = photo.images.length;
 	let done = 0;
-	const images = await Promise.all(
-		photo.images.map(async (imgData) => ({
-			...imgData,
-			data: await (async () => {
-				try {
-					const img = new Image();
-					img.crossOrigin = 'anonymous';
-					img.src = imgData.url;
-					await img.decode();
+	const images = (
+		await Promise.all(
+			photo.images.map(async (imgData) => ({
+				...imgData,
+				data: await (async () => {
+					let img: HTMLImageElement | null;
+					try {
+						img = new Image();
+						img.crossOrigin = 'anonymous';
+						img.src = imgData.url;
+						await img.decode();
+						return img;
+					} catch (e) {
+						console.error(e);
+						img = null;
+					}
 					done += 1;
 					if (onProgress) onProgress(done, total - done, total);
 					return img;
-				} catch (e) {
-					console.log(e);
-					return createEmptyBitmap();
-				}
-			})(),
-		})),
-	);
+				})(),
+			})),
+		)
+	).filter((v) => v.data !== null);
 	return {
 		...photo,
 		images,
@@ -137,7 +135,7 @@ async function getDecodedImages(photo: Awaited<ReturnType<typeof downloadPhoto>>
 	const decodedImages: ImageBitmap[] = [];
 	for (const image of photo.images) {
 		const sliceCount = getSliceCount(photo.scrambleId, photo.id, image.name);
-		const decoded = reverseImageSlices(await createImageBitmap(image.data), sliceCount);
+		const decoded = reverseImageSlices(await createImageBitmap(image.data!), sliceCount);
 		decodedImages.push(decoded as ImageBitmap);
 	}
 	return decodedImages;
