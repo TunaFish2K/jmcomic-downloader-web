@@ -195,10 +195,16 @@ function App() {
 				setDownloadingProgress(done);
 			});
 			let data: Uint8Array;
-			if (outputFormat === 'pdf') data = await (await getPDFFromPhoto(downloaded)).save();
-			else data = await generateZip(await getDecodedImages(downloaded));
+			let mimeType: string;
+			if (outputFormat === 'pdf') {
+				data = await (await getPDFFromPhoto(downloaded)).save();
+				mimeType = 'application/pdf';
+			} else {
+				data = await generateZip(await getDecodedImages(downloaded));
+				mimeType = outputFormat === 'cbz' ? 'application/x-cbz' : 'application/zip';
+			}
 
-			downloadUint8Array(data, `${photoData!.name}.${outputFormat}`, 'application/pdf');
+			downloadUint8Array(data, `${photoData!.name}.${outputFormat}`, mimeType);
 		} catch (e) {
 			console.error((e as Error).stack ?? (e as Error).message ?? e);
 			alert('下载失败：' + ((e as Error).message ?? e));
