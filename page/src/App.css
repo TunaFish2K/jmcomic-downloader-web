@@ -27,3 +27,8 @@
 .progress {
 	width: auto;
 }
+
+.format {
+	display: flex;
+	flex-direction: row;
+}

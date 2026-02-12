@@ -3,6 +3,7 @@ import { md5 } from '@noble/hashes/legacy.js';
 import { bytesToHex } from '@noble/hashes/utils.js';
 import { PDFDocument } from 'pdf-lib';
 import { useState } from 'react';
+import { zipSync } from 'fflate';
 
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
 
@@ -128,13 +129,18 @@ async function bitmapToJpgBuffer(bitmap: ImageBitmap, quality = 1): Promise<Uint
 	return new Uint8Array(buffer);
 }
 
-async function getPDFFromPhoto(photo: Awaited<ReturnType<typeof downloadPhoto>>) {
+async function getDecodedImages(photo: Awaited<ReturnType<typeof downloadPhoto>>) {
 	const decodedImages: ImageBitmap[] = [];
 	for (const image of photo.images) {
 		const sliceCount = getSliceCount(photo.scrambleId, photo.id, image.name);
 		const decoded = reverseImageSlices(await createImageBitmap(image.data), sliceCount);
 		decodedImages.push(decoded as ImageBitmap);
 	}
+	return decodedImages;
+}
+
+async function getPDFFromPhoto(photo: Awaited<ReturnType<typeof downloadPhoto>>) {
+	const decodedImages = await getDecodedImages(photo);
 	const pdf = await generatePDF(decodedImages);
 	return pdf;
 }
@@ -151,12 +157,21 @@ function downloadUint8Array(data: Uint8Array, fileName: string, mimeType: string
 	URL.revokeObjectURL(url);
 }
 
+async function generateZip(images: ImageBitmap[]) {
+	const zipFile = zipSync(
+		Object.fromEntries(await Promise.all(images.map(async (v, idx) => [`${idx}`.padStart(3) + '.jpg', await bitmapToJpgBuffer(v, 1.0)]))),
+	);
+	return zipFile;
+}
+
 function App() {
 	const [photoId, setPhotoId] = useState('');
 	const [queryingPhotoData, setQueryingPhotoData] = useState(false);
 	const [photoData, setPhotoData] = useState<Awaited<ReturnType<typeof getPhoto>> | null>(null);
 	const [downloadingPhoto, setDownloadingPhoto] = useState(false);
 	const [downloadingProgress, setDownloadingProgress] = useState(0);
+
+	const [outputFormat, setOutputFormat] = useState<'zip' | 'pdf' | 'cbz'>('pdf');
 
 	const canOperate = !downloadingPhoto && !queryingPhotoData;
 
@@ -179,9 +194,11 @@ function App() {
 			const downloaded = await downloadPhoto(photoData!, (done) => {
 				setDownloadingProgress(done);
 			});
-			const pdf = await getPDFFromPhoto(downloaded);
-			const data = await pdf.save();
-			downloadUint8Array(data, `${photoData!.name}.pdf`, 'application/pdf');
+			let data: Uint8Array;
+			if (outputFormat === 'pdf') data = await (await getPDFFromPhoto(downloaded)).save();
+			else data = await generateZip(await getDecodedImages(downloaded));
+
+			downloadUint8Array(data, `${photoData!.name}.${outputFormat}`, 'application/pdf');
 		} catch (e) {
 			console.error((e as Error).stack ?? (e as Error).message ?? e);
 			alert('下载失败：' + ((e as Error).message ?? e));
@@ -196,7 +213,7 @@ function App() {
 				查询本子
 				<label>
 					车牌号：
-					<input type="" onChange={(ev) => setPhotoId(ev.target.value)} disabled={!canOperate} />{' '}
+					<input name="id" type="" onChange={(ev) => setPhotoId(ev.target.value)} disabled={!canOperate} />
 				</label>
 				<button
 					type="submit"
@@ -213,6 +230,39 @@ function App() {
 				<form className="card">
 					<span>车牌号： {photoData!.id}</span>
 					<span>标题: {photoData!.name}</span>
+					<div className="format">
+						<label>格式：</label>
+						<label>
+							<input
+								type="radio"
+								name="format"
+								value="pdf"
+								checked={outputFormat === 'pdf'}
+								onChange={(v) => v.target.checked && setOutputFormat('pdf')}
+							></input>
+							pdf
+						</label>
+						<label>
+							<input
+								type="radio"
+								name="format"
+								value="zip"
+								checked={outputFormat === 'zip'}
+								onChange={(v) => v.target.checked && setOutputFormat('zip')}
+							></input>
+							zip
+						</label>
+						<label>
+							<input
+								type="radio"
+								name="format"
+								value="zip"
+								checked={outputFormat === 'cbz'}
+								onChange={(v) => v.target.checked && setOutputFormat('cbz')}
+							></input>
+							cbz
+						</label>
+					</div>
 					<button type="submit" onClick={() => downloadPhotoHandler()} disabled={!canOperate}>
 						下载
 					</button>
@@ -221,7 +271,7 @@ function App() {
 							<span>
 								下载进度：{downloadingProgress} / {photoData.images.length}
 							</span>
-							<span>{downloadingProgress >= photoData.images.length && '生成PDF中...'}</span>
+							<span>{downloadingProgress >= photoData.images.length && '解密并打包中...'}</span>
 						</div>
 					)}
 				</form>
