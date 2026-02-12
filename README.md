@@ -56,7 +56,7 @@ pnpm run dev # 自动启动后端与前端
     - [x] 后端限流（借助cloudflare waf，不用自行实现）
     - [x] 前端下载图片的进度显示
     - [ ] 支持以CBZ格式或ZIP格式（内容一样）下载
-        - [ ] 引入zip模块
+        - [x] 引入zip模块
         - [ ] 文件的打包
             - [ ] 图片内容
             - [ ] ComicInfo.xml的生成
