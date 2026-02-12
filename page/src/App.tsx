@@ -31,6 +31,12 @@ async function getPhoto(id: string) {
 	return body;
 }
 
+function createEmptyBitmap() {
+	const canvas = new OffscreenCanvas(1, 1);
+	canvas.getContext('2d');
+	return canvas.transferToImageBitmap();
+}
+
 async function downloadPhoto(
 	photo: Awaited<ReturnType<typeof getPhoto>>,
 	onProgress?: (done: number, left: number, total: number) => void,
@@ -41,6 +47,7 @@ async function downloadPhoto(
 		photo.images.map(async (imgData) => ({
 			...imgData,
 			data: await (async () => {
+				if (imgData.name.endsWith('.gif')) return createEmptyBitmap();
 				const img = new Image();
 				img.crossOrigin = 'anonymous';
 				img.src = imgData.url;
@@ -62,6 +69,7 @@ const SCRAMBLE_421926 = 421926;
 
 function getSliceCount(scrambleId: number, photoId: number, filename: string): number {
 	if (photoId < scrambleId) return 0;
+	if (filename.endsWith('.gif')) return 0;
 	if (photoId < SCRAMBLE_268850) return 10;
 	const hex = bytesToHex(md5(new TextEncoder().encode(`${photoId}${filename.split('.')[0]}`)));
 	return (hex.charCodeAt(hex.length - 1) % (photoId < SCRAMBLE_421926 ? 10 : 8)) * 2 + 2;
@@ -157,6 +165,7 @@ function App() {
 		try {
 			setPhotoData(await getPhoto(photoId.trim()));
 		} catch (e) {
+			console.error((e as Error).stack ?? (e as Error).message ?? e);
 			alert('获取失败：' + ((e as Error).message ?? e));
 		} finally {
 			setQueryingPhotoData(false);
@@ -174,6 +183,7 @@ function App() {
 			const data = await pdf.save();
 			downloadUint8Array(data, `${photoData!.name}.pdf`, 'application/pdf');
 		} catch (e) {
+			console.error((e as Error).stack ?? (e as Error).message ?? e);
 			alert('下载失败：' + ((e as Error).message ?? e));
 		} finally {
 			setDownloadingPhoto(false);
@@ -218,6 +228,7 @@ function App() {
 			)}
 
 			<div className="card">
+				<span>不计划支持下载带有动图的本子，动图会被删除。</span>
 				<span>本服务不做图片资源中转。图片一般不会被墙，如果出现错误建议等会重试，基本都是上游图片CDN的暂时问题。</span>
 				<span>
 					Github: <a href="https://github.com/TunaFish2K/jmcomic-downloader-web">前往</a>
