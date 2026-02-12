@@ -55,7 +55,13 @@ pnpm run dev # 自动启动后端与前端
 - [x] 修缮
     - [x] 后端限流（借助cloudflare waf，不用自行实现）
     - [x] 前端下载图片的进度显示
-
+    - [ ] 支持以CBZ格式或ZIP格式（内容一样）下载
+        - [ ] 引入zip模块
+        - [ ] 文件的打包
+            - [ ] 图片内容
+            - [ ] ComicInfo.xml的生成
+        - [ ] 选择导出方式的ui
+    - [ ] 有限地支持动图（不报错，只使用第一帧）
 ## 致谢
 本项目全程在学习和抄写[https://github.com/hect0x7/JMComic-Crawler-Python](https://github.com/hect0x7/JMComic-Crawler-Python/)项目。（欸嘿）
 
