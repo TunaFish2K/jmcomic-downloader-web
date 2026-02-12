@@ -61,7 +61,7 @@ pnpm run dev # 自动启动后端与前端
             - [ ] 图片内容
             - [ ] ComicInfo.xml的生成
         - [ ] 选择导出方式的ui
-    - [ ] 加入提示不支持动图（不计划实现），实现跳过动图的功能
+    - [x] 加入提示不支持动图（不计划实现），实现跳过动图的功能
 ## 致谢
 本项目全程在学习和抄写[https://github.com/hect0x7/JMComic-Crawler-Python](https://github.com/hect0x7/JMComic-Crawler-Python/)项目。（欸嘿）
 
