@@ -48,14 +48,18 @@ async function downloadPhoto(
 		photo.images.map(async (imgData) => ({
 			...imgData,
 			data: await (async () => {
-				if (imgData.name.endsWith('.gif')) return createEmptyBitmap();
-				const img = new Image();
-				img.crossOrigin = 'anonymous';
-				img.src = imgData.url;
-				await img.decode();
-				done += 1;
-				if (onProgress) onProgress(done, total - done, total);
-				return img;
+				try {
+					const img = new Image();
+					img.crossOrigin = 'anonymous';
+					img.src = imgData.url;
+					await img.decode();
+					done += 1;
+					if (onProgress) onProgress(done, total - done, total);
+					return img;
+				} catch (e) {
+					console.log(e);
+					return createEmptyBitmap();
+				}
 			})(),
 		})),
 	);
