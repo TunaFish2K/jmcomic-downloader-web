@@ -3,7 +3,8 @@ import { md5 } from '@noble/hashes/legacy.js';
 import { bytesToHex } from '@noble/hashes/utils.js';
 import { PDFDocument } from 'pdf-lib';
 import { useState } from 'react';
-import { zipSync } from 'fflate';
+import pLimit from 'p-limit';
+import { Zip, AsyncZipDeflate } from 'fflate';
 
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
 
@@ -38,32 +39,31 @@ async function downloadPhoto(
 ) {
 	const total = photo.images.length;
 	let done = 0;
-	const images = (
-		await Promise.all(
-			photo.images.map(async (imgData) => ({
-				...imgData,
-				data: await (async () => {
-					let img: HTMLImageElement | null;
-					try {
-						img = new Image();
-						img.crossOrigin = 'anonymous';
-						img.src = imgData.url;
-						await img.decode();
-					} catch (e) {
-						console.error(e, imgData.name, imgData.url);
-						img = null;
-					}
-					done += 1;
-					if (onProgress) onProgress(done, total - done, total);
-					return img;
-				})(),
-			})),
-		)
-	).filter((v) => v.data !== null);
-	return {
-		...photo,
-		images,
-	};
+
+	const limit = pLimit(10);
+
+	const tasks = photo.images.map((imgData) =>
+		limit(async () => {
+			try {
+				const img = new Image();
+				img.crossOrigin = 'anonymous';
+				img.src = imgData.url;
+				await img.decode();
+				return { ...imgData, data: img };
+			} catch (e) {
+				console.error(e, imgData.name, imgData.url);
+				return { ...imgData, data: null };
+			} finally {
+				done += 1;
+				onProgress?.(done, total - done, total);
+			}
+		}),
+	);
+
+	const results = await Promise.all(tasks);
+	const images = results.filter((v) => v.data !== null);
+
+	return { ...photo, images };
 }
 
 const SCRAMBLE_268850 = 268850;
@@ -103,16 +103,6 @@ function reverseImageSlices(bitmap: ImageBitmap, sliceCount: number) {
 	return canvas;
 }
 
-async function generatePDF(images: ImageBitmap[]) {
-	const pdfDocument = await PDFDocument.create();
-	for (const image of images) {
-		const page = pdfDocument.addPage([image.width, image.height]);
-		const pdfImage = await pdfDocument.embedJpg(await bitmapToJpgBuffer(image));
-		page.drawImage(pdfImage, { x: 0, y: 0, width: image.width, height: image.height });
-	}
-	return pdfDocument;
-}
-
 async function bitmapToJpgBuffer(bitmap: ImageBitmap, quality = 1): Promise<Uint8Array> {
 	const canvas = new OffscreenCanvas(bitmap.width, bitmap.height);
 	const ctx = canvas.getContext('2d');
@@ -130,39 +120,101 @@ async function bitmapToJpgBuffer(bitmap: ImageBitmap, quality = 1): Promise<Uint
 	return new Uint8Array(buffer);
 }
 
-async function getDecodedImages(photo: Awaited<ReturnType<typeof downloadPhoto>>) {
-	const decodedImages: ImageBitmap[] = [];
+async function downloadZipStream(
+	photo: Awaited<ReturnType<typeof downloadPhoto>>,
+	filename: string,
+	onProgress?: (done: number, total: number) => void,
+) {
+	return new Promise<void>((resolve, reject) => {
+		const chunks: Uint8Array[] = [];
+
+		const zip = new Zip((err, data, final) => {
+			if (err) {
+				reject(err);
+				return;
+			}
+			chunks.push(data);
+			if (final) {
+				const totalLength = chunks.reduce((acc, chunk) => acc + chunk.length, 0);
+				const result = new Uint8Array(totalLength);
+				let offset = 0;
+				for (const chunk of chunks) {
+					result.set(chunk, offset);
+					offset += chunk.length;
+				}
+
+				const blob = new Blob([result], { type: 'application/zip' });
+				const url = URL.createObjectURL(blob);
+				const link = document.createElement('a');
+				link.href = url;
+				link.download = filename;
+				document.body.appendChild(link);
+				link.click();
+				document.body.removeChild(link);
+				URL.revokeObjectURL(url);
+
+				resolve();
+			}
+		});
+
+		(async () => {
+			try {
+				let processed = 0;
+				const total = photo.images.length;
+
+				for (const image of photo.images) {
+					const sliceCount = getSliceCount(photo.scrambleId, photo.id, image.name);
+					const decoded = reverseImageSlices(await createImageBitmap(image.data!), sliceCount);
+					const jpgBuffer = await bitmapToJpgBuffer(decoded as ImageBitmap, 1.0);
+
+					const file = new AsyncZipDeflate(`${processed}`.padStart(3, '0') + '.jpg', { level: 6 });
+					zip.add(file);
+					file.push(jpgBuffer, true);
+
+					processed++;
+					onProgress?.(processed, total);
+				}
+
+				zip.end();
+			} catch (err) {
+				reject(err);
+			}
+		})();
+	});
+}
+
+async function downloadPDF(
+	photo: Awaited<ReturnType<typeof downloadPhoto>>,
+	filename: string,
+	onProgress?: (done: number, total: number) => void,
+) {
+	const pdfDocument = await PDFDocument.create();
+	let processed = 0;
+	const total = photo.images.length;
+
 	for (const image of photo.images) {
 		const sliceCount = getSliceCount(photo.scrambleId, photo.id, image.name);
 		const decoded = reverseImageSlices(await createImageBitmap(image.data!), sliceCount);
-		decodedImages.push(decoded as ImageBitmap);
+		const bitmap = decoded as ImageBitmap;
+
+		const page = pdfDocument.addPage([bitmap.width, bitmap.height]);
+		const pdfImage = await pdfDocument.embedJpg(await bitmapToJpgBuffer(bitmap));
+		page.drawImage(pdfImage, { x: 0, y: 0, width: bitmap.width, height: bitmap.height });
+
+		processed++;
+		onProgress?.(processed, total);
 	}
-	return decodedImages;
-}
 
-async function getPDFFromPhoto(photo: Awaited<ReturnType<typeof downloadPhoto>>) {
-	const decodedImages = await getDecodedImages(photo);
-	const pdf = await generatePDF(decodedImages);
-	return pdf;
-}
-
-function downloadUint8Array(data: Uint8Array, fileName: string, mimeType: string) {
-	const blob = new Blob([data as Uint8Array<ArrayBuffer>], { type: mimeType });
+	const pdfBytes = await pdfDocument.save();
+	const blob = new Blob([new Uint8Array(pdfBytes)], { type: 'application/pdf' });
 	const url = URL.createObjectURL(blob);
 	const link = document.createElement('a');
 	link.href = url;
-	link.download = fileName;
+	link.download = filename;
 	document.body.appendChild(link);
 	link.click();
 	document.body.removeChild(link);
 	URL.revokeObjectURL(url);
-}
-
-async function generateZip(images: ImageBitmap[]) {
-	const zipFile = zipSync(
-		Object.fromEntries(await Promise.all(images.map(async (v, idx) => [`${idx}`.padStart(3) + '.jpg', await bitmapToJpgBuffer(v, 1.0)]))),
-	);
-	return zipFile;
 }
 
 function App() {
@@ -171,6 +223,7 @@ function App() {
 	const [photoData, setPhotoData] = useState<Awaited<ReturnType<typeof getPhoto>> | null>(null);
 	const [downloadingPhoto, setDownloadingPhoto] = useState(false);
 	const [downloadingProgress, setDownloadingProgress] = useState(0);
+	const [packingProgress, setPackingProgress] = useState(0);
 
 	const [outputFormat, setOutputFormat] = useState<'zip' | 'pdf' | 'cbz'>('pdf');
 
@@ -191,26 +244,34 @@ function App() {
 	async function downloadPhotoHandler() {
 		setDownloadingPhoto(true);
 		setDownloadingProgress(0);
+		setPackingProgress(0);
 		try {
 			const downloaded = await downloadPhoto(photoData!, (done) => {
 				setDownloadingProgress(done);
 			});
-			let data: Uint8Array;
-			let mimeType: string;
-			if (outputFormat === 'pdf') {
-				data = await (await getPDFFromPhoto(downloaded)).save();
-				mimeType = 'application/pdf';
-			} else {
-				data = await generateZip(await getDecodedImages(downloaded));
-				mimeType = outputFormat === 'cbz' ? 'application/x-cbz' : 'application/zip';
-			}
 
-			downloadUint8Array(data, `${photoData!.name}.${outputFormat}`, mimeType);
+			setPackingProgress(0);
+
+			if (outputFormat === 'pdf') {
+				await downloadPDF(downloaded, `${photoData!.name}.pdf`, (done) => {
+					setPackingProgress(done);
+				});
+			} else if (outputFormat === 'cbz') {
+				await downloadZipStream(downloaded, `${photoData!.name}.cbz`, (done) => {
+					setPackingProgress(done);
+				});
+			} else {
+				await downloadZipStream(downloaded, `${photoData!.name}.zip`, (done) => {
+					setPackingProgress(done);
+				});
+			}
 		} catch (e) {
 			console.error((e as Error).stack ?? (e as Error).message ?? e);
 			alert('下载失败：' + ((e as Error).message ?? e));
 		} finally {
 			setDownloadingPhoto(false);
+			setDownloadingProgress(0);
+			setPackingProgress(0);
 		}
 	}
 
@@ -278,7 +339,11 @@ function App() {
 							<span>
 								下载进度：{downloadingProgress} / {photoData.images.length}
 							</span>
-							<span>{downloadingProgress >= photoData.images.length && '解密并打包中...'}</span>
+							{downloadingProgress >= photoData.images.length && (
+								<span>
+									打包进度：{packingProgress} / {photoData.images.length}
+								</span>
+							)}
 						</div>
 					)}
 				</form>
