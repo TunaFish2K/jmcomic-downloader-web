@@ -161,13 +161,14 @@ async function downloadZipStream(
 			try {
 				let processed = 0;
 				const total = photo.images.length;
+				const filenameSize = total.toString().length;
 
 				for (const image of photo.images) {
 					const sliceCount = getSliceCount(photo.scrambleId, photo.id, image.name);
 					const decoded = reverseImageSlices(await createImageBitmap(image.data!), sliceCount);
 					const jpgBuffer = await bitmapToJpgBuffer(decoded as ImageBitmap, 1.0);
 
-					const file = new AsyncZipDeflate(`${processed}`.padStart(3, '0') + '.jpg', { level: 6 });
+					const file = new AsyncZipDeflate(`${processed}`.padStart(filenameSize, '0') + '.jpg', { level: 6 });
 					zip.add(file);
 					file.push(jpgBuffer, true);
 
