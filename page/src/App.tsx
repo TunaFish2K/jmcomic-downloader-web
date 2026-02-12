@@ -127,7 +127,7 @@ async function downloadZipStream(
 ) {
 	return new Promise<void>((resolve, reject) => {
 		const chunks: Uint8Array[] = [];
-		
+
 		const zip = new Zip((err, data, final) => {
 			if (err) {
 				reject(err);
@@ -142,9 +142,9 @@ async function downloadZipStream(
 					result.set(chunk, offset);
 					offset += chunk.length;
 				}
-				
+
 				// 根据文件扩展名设置正确的 MIME 类型
-				const mimeType = filename.endsWith('.cbz') ? 'application/vnd.comicbook+zip' : 'application/zip';
+				const mimeType = filename.endsWith('.cbz') ? 'application/octet-stream' : 'application/zip';
 				const blob = new Blob([result], { type: mimeType });
 				const url = URL.createObjectURL(blob);
 				const link = document.createElement('a');
@@ -154,7 +154,7 @@ async function downloadZipStream(
 				link.click();
 				document.body.removeChild(link);
 				URL.revokeObjectURL(url);
-				
+
 				resolve();
 			}
 		});
