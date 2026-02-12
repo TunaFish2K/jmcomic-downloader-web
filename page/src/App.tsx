@@ -49,9 +49,8 @@ async function downloadPhoto(
 						img.crossOrigin = 'anonymous';
 						img.src = imgData.url;
 						await img.decode();
-						return img;
 					} catch (e) {
-						console.error(e);
+						console.error(e, imgData.name, imgData.url);
 						img = null;
 					}
 					done += 1;
